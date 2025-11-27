@@ -6,7 +6,7 @@ load_dotenv()
 
 app = FastAPI(title="Schoolify")
 
-app.include_router(auth.router)
+app.include_router(auth.router) 
 
 @app.get("/healthz")
 def health():
