@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict, List
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -38,3 +41,41 @@ class StudentOut(BaseModel):
     class_name: Optional[str]
     teacher_id: Optional[str]
     parent_id: Optional[str]
+
+
+SUBJECTS = ["maths", "physics", "chemistry", "biology", "social", "english"]
+
+class ExamScores(BaseModel):
+    maths: int
+    physics: int
+    chemistry: int
+    biology: int
+    social: int
+    english: int
+
+class ExamCreate(BaseModel):
+    term: Optional[str] = "term1"       # e.g., term1, midterm, final
+    date: Optional[datetime] = None
+    scores: ExamScores
+
+class ExamOut(BaseModel):
+    id: str
+    student_id: str
+    teacher_id: str
+    term: str
+    date: Optional[datetime]
+    scores: Dict[str, int]
+
+class ComparisonSubjectStat(BaseModel):
+    subject: str
+    student_a: int
+    student_b: int
+    diff: int
+
+class ComparisonOut(BaseModel):
+    student_a: str
+    student_b: str
+    term: Optional[str]
+    subjects: List[ComparisonSubjectStat]
+    average_a: float
+    average_b: float
