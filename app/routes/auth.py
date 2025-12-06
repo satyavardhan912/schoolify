@@ -4,6 +4,8 @@ from app.db import get_users_collection, db
 from bson.objectid import ObjectId
 import os
 
+from app.security import hash_password, verify_password
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 USERS = get_users_collection()
@@ -13,9 +15,10 @@ STUDENTS = db["students"]
 def register(u: schemas.UserCreate):
     if USERS.find_one({"email": u.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
+    hashed = hash_password(u.password)
     doc = {
         "email": u.email,
-        "password": u.password,  # VULNERABLE: plaintext for Phase1
+        "password": hashed,
         "full_name": u.full_name,
         "role": u.role or "teacher",
     }
@@ -27,6 +30,21 @@ def register(u: schemas.UserCreate):
 def login(creds: schemas.LoginIn):
     user = USERS.find_one({"email": creds.email})
     if not user or user.get("password") != creds.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    # Support both hashed and legacy plaintext passwords:
+    stored_hash = user.get("password_hash") or user.get("password")
+    if stored_hash is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    # If string starts with $2 (Bcrypt string), verify it
+    if isinstance(stored_hash, str) and stored_hash.startswith("$2"):
+        ok = verify_password(creds.password, stored_hash)
+    else:
+        # Migrate to hash if the plaintext password is in-use
+        ok = (creds.password == stored_hash)
+        if ok:
+            USERS.update_one({"_id": user["_id"]},
+                             {"$set": {"password_hash": hash_password(creds.password)}, "$unset": {"password": ""}})
+    if not ok:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = f"fake-token-for-{str(user['_id'])}"
     expires = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", "3600"))
