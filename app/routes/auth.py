@@ -4,7 +4,7 @@ from app.db import get_users_collection, db
 from bson.objectid import ObjectId
 import os
 
-from app.security import hash_password, verify_password
+from app.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -46,7 +46,7 @@ def login(creds: schemas.LoginIn):
                              {"$set": {"password_hash": hash_password(creds.password)}, "$unset": {"password": ""}})
     if not ok:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = f"fake-token-for-{str(user['_id'])}"
+    token = create_access_token(subject=str(user["_id"]), role=user.get("role", "teacher"))
     expires = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", "3600"))
     return {"access_token": token, "token_type": "bearer", "expires_in": expires}
 
