@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from app.db import db
 from bson.objectid import ObjectId
+
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/students", tags=["students"])
 
 @router.get("/{student_id}", response_model=dict)
-def get_student(student_id: str):
+def get_student(student_id: str, current_user: dict = Depends(get_current_user)):
     try:
         doc = db["students"].find_one({"_id": ObjectId(student_id)})
     except Exception:

@@ -5,6 +5,8 @@ from bson.objectid import ObjectId
 import os
 
 from app.security import hash_password, verify_password, create_access_token
+from fastapi import Depends
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -51,7 +53,7 @@ def login(creds: schemas.LoginIn):
     return {"access_token": token, "token_type": "bearer", "expires_in": expires}
 
 @router.post("/principal/add-teacher", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
-def principal_add_teacher(u: schemas.UserCreate):
+def principal_add_teacher(u: schemas.UserCreate, current_user: dict = Depends(get_current_user)):
     # role forced to teacher
     u.role = "teacher"
     if USERS.find_one({"email": u.email}):
@@ -66,8 +68,7 @@ def principal_add_teacher(u: schemas.UserCreate):
     return {"id": str(res.inserted_id), "email": doc["email"], "full_name": doc["full_name"], "role": doc["role"]}
 
 @router.post("/teachers/{teacher_id}/students", response_model=schemas.StudentOut, status_code=status.HTTP_201_CREATED)
-def teacher_add_student(teacher_id: str = Path(...), s: schemas.StudentCreate = None):
-    # Ensure teacher exists (no role enforcement in Phase1)
+def teacher_add_student(teacher_id: str = Path(...), s: schemas.StudentCreate = None, current_user: dict = Depends(get_current_user)):
     t = USERS.find_one({"_id": ObjectId(teacher_id)})
     if not t:
         raise HTTPException(status_code=404, detail="Teacher not found")

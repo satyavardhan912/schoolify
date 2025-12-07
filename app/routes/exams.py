@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from app.db import db, get_users_collection
 from app import schemas
 from bson.objectid import ObjectId
 from datetime import datetime
 from typing import Optional, List
+
+from app.deps import get_current_user
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -17,6 +19,7 @@ def upload_exam(
     teacher_id: str = Path(..., description="teacher ObjectId"),
     student_id: str = Path(..., description="student ObjectId"),
     exam: schemas.ExamCreate = None,
+    current_user: dict = Depends(get_current_user),
 ):
     # validate teacher exists
     try:
@@ -56,7 +59,7 @@ def upload_exam(
 
 # List exams for a student
 @router.get("/students/{student_id}", response_model=List[schemas.ExamOut])
-def list_student_exams(student_id: str = Path(...)):
+def list_student_exams(student_id: str = Path(...), current_user: dict = Depends(get_current_user)):
     try:
         docs = EXAMS.find({"student_id": student_id})
     except Exception:
@@ -79,6 +82,7 @@ def compare_students(
     student_a: str = Query(..., description="student A id"),
     student_b: str = Query(..., description="student B id"),
     term: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
 ):
     # helper to get exam for student+term
     def get_exam_for(student_id: str, term: Optional[str]):
