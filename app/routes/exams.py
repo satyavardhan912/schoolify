@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
+from starlette import status
+
 from app.db import db, get_users_collection
 from app import schemas
 from bson.objectid import ObjectId
@@ -21,6 +23,12 @@ def upload_exam(
     exam: schemas.ExamCreate = None,
     current_user: dict = Depends(get_current_user),
 ):
+    # Only teachers may upload exam results and must be the same teacher
+    if current_user.get("role") != "teacher":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only teachers can upload exam results")
+    if current_user.get("id") != teacher_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Teacher can only upload exams for their own students")
     # validate teacher exists
     try:
         t = USERS.find_one({"_id": ObjectId(teacher_id)})
@@ -84,6 +92,10 @@ def compare_students(
     term: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user),
 ):
+    # Only teachers may perform comparisons
+    if current_user.get("role") != "teacher":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only teachers can compare students")
+
     # helper to get exam for student+term
     def get_exam_for(student_id: str, term: Optional[str]):
         query = {"student_id": student_id}
