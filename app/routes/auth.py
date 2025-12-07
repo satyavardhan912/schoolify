@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Path
 from app import schemas
+from app.crypto import encrypt_field
 from app.db import get_users_collection, db
 from bson.objectid import ObjectId
 import os
@@ -18,15 +19,18 @@ def register(u: schemas.UserCreate):
     if USERS.find_one({"email": u.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = hash_password(u.password)
+    full_name_enc = encrypt_field(u.full_name) if u.full_name else None
     doc = {
         "email": u.email,
         "password": hashed,
-        "full_name": u.full_name,
+        "full_name_enc": full_name_enc,
+        "full_name": u.full_name if full_name_enc is None else None,
         "role": u.role or "teacher",
     }
     res = USERS.insert_one(doc)
     doc["id"] = str(res.inserted_id)
-    return {"id": doc["id"], "email": doc["email"], "full_name": doc.get("full_name"), "role": doc["role"]}
+    returned_full_name = u.full_name
+    return {"id": doc["id"], "email": doc["email"], "full_name": returned_full_name, "role": doc["role"]}
 
 @router.post("/login", response_model=schemas.TokenOut)
 def login(creds: schemas.LoginIn):
@@ -62,14 +66,17 @@ def principal_add_teacher(u: schemas.UserCreate, current_user: dict = Depends(ge
     if USERS.find_one({"email": u.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = hash_password(u.password)
+    full_name_enc = encrypt_field(u.full_name) if u.full_name else None
     doc = {
         "email": u.email,
         "password_hash": hashed,
-        "full_name": u.full_name,
+        "full_name_enc": full_name_enc,
+        "full_name": u.full_name if full_name_enc is None else None,
         "role": "teacher",
     }
     res = USERS.insert_one(doc)
-    return {"id": str(res.inserted_id), "email": doc["email"], "full_name": doc["full_name"], "role": doc["role"]}
+    returned_full_name = u.full_name
+    return {"id": str(res.inserted_id), "email": doc["email"], "full_name": returned_full_name, "role": doc["role"]}
 
 
 @router.post("/teachers/{teacher_id}/students", response_model=schemas.StudentOut, status_code=status.HTTP_201_CREATED)
