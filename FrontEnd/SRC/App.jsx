@@ -1,5 +1,6 @@
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
+import PrincipalDashboard from "./pages/PrincipalDashboard";
 
 function App() {
   const { isAuthenticated, user, logout, initializing } = useAuth();
@@ -16,13 +17,18 @@ function App() {
     return <LoginPage />;
   }
 
+  const role = user?.role || "unknown";
+
+  const isPrincipal = role === "principal";
+  const isTeacher = role === "teacher";
+
   return (
     <div className="app-container">
       <header className="app-header">
         <div>
           <h1>Schoolify UI</h1>
           <p className="subtitle">
-            You are logged in as <strong>{user?.role || "unknown-role"}</strong>
+            Logged in as <strong>{role}</strong>
           </p>
         </div>
         <button className="logout-btn" onClick={logout}>
@@ -37,24 +43,36 @@ function App() {
             <strong>ID:</strong> {user?.id || "N/A"}
           </p>
           <p>
-            <strong>Role:</strong> {user?.role || "N/A"}
+            <strong>Role:</strong> {role}
           </p>
           <p className="hint">
-            This data is decoded from the JWT issued by the backend.
+            This is decoded from the JWT issued by the backend. Role is used in
+            the UI and also enforced by backend RBAC.
           </p>
         </section>
 
-        <section className="card">
-          <h2>Next steps</h2>
-          <ul>
-            <li>Principal dashboard to create teachers (principal-only).</li>
-            <li>
-              Teacher dashboard to add students, upload exams and compare
-              performance.
-            </li>
-            <li>Security info page explaining hashing, JWT and encryption.</li>
-          </ul>
-        </section>
+        {isPrincipal && <PrincipalDashboard />}
+
+        {isTeacher && (
+          <section className="card">
+            <h2>Teacher dashboard (coming next)</h2>
+            <p>
+              In the next PR, this section will let teachers add students,
+              upload exams, and compare performance.
+            </p>
+          </section>
+        )}
+
+        {!isPrincipal && !isTeacher && (
+          <section className="card">
+            <h2>Limited view</h2>
+            <p>
+              You are logged in but do not have principal or teacher
+              permissions. Principal-only actions are hidden and will return
+              HTTP 403 from the backend if attempted.
+            </p>
+          </section>
+        )}
       </main>
     </div>
   );
