@@ -1,6 +1,7 @@
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import PrincipalDashboard from "./pages/PrincipalDashboard";
+import TeacherDashboard from "./pages/TeacherDashboard";
 
 function App() {
   const { isAuthenticated, user, logout, initializing } = useAuth();
@@ -53,15 +54,7 @@ function App() {
 
         {isPrincipal && <PrincipalDashboard />}
 
-        {isTeacher && (
-          <section className="card">
-            <h2>Teacher dashboard (coming next)</h2>
-            <p>
-              In the next PR, this section will let teachers add students,
-              upload exams, and compare performance.
-            </p>
-          </section>
-        )}
+        {role === "teacher" && <TeacherDashboard />}
 
         {!isPrincipal && !isTeacher && (
           <section className="card">
