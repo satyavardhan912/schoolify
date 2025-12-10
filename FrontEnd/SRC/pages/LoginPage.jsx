@@ -58,11 +58,6 @@ export default function LoginPage() {
           <button type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
-
-          <p className="hint">
-            Try seeded users like <code>teacher1@schoolify / teachpass</code> or
-            your own accounts.
-          </p>
         </form>
       </div>
     </div>
