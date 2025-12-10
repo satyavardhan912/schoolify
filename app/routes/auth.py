@@ -35,7 +35,7 @@ def register(u: schemas.UserCreate):
 @router.post("/login", response_model=schemas.TokenOut)
 def login(creds: schemas.LoginIn):
     user = USERS.find_one({"email": creds.email})
-    if not user or user.get("password") != creds.password:
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     # Support both hashed and legacy plaintext passwords:
     stored_hash = user.get("password_hash") or user.get("password")
