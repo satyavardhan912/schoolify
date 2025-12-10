@@ -122,3 +122,34 @@ def teacher_add_student(teacher_id: str = Path(...), s: schemas.StudentCreate = 
         "teacher_id": stud_doc.get("teacher_id"),
         "parent_id": stud_doc.get("parent_id"),
     }
+
+
+@router.delete(
+    "/principal/teachers/{teacher_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def principal_delete_teacher(
+    teacher_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    # Only principal can delete teachers
+    if current_user.get("role") != "principal":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only principal can delete teachers",
+        )
+
+    try:
+        oid = ObjectId(teacher_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid teacher id")
+
+    teacher = USERS.find_one({"_id": oid})
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    if teacher.get("role") != "teacher":
+        raise HTTPException(status_code=400, detail="Target user is not a teacher")
+
+    USERS.delete_one({"_id": oid})
+    # we just return 204 No Content
+    return
