@@ -8,7 +8,7 @@ except Exception:
     InvalidToken = Exception
 
 logger = logging.getLogger("app.crypto")
-_key = os.getenv("FIELD_ENCRYPTION_KEY", "").strip() or None
+_key = os.getenv("FIELD_ENCRYPTION_KEY", "schoolify-masterkey").strip() or None
 _fernet = None
 
 if _key and Fernet is not None:

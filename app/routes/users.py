@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException
+
+from app.crypto import decrypt_field
 from app.db import get_users_collection
 from bson.objectid import ObjectId
 from typing import List
@@ -11,7 +13,7 @@ def list_teachers():
     docs = users.find({"role": "teacher"})
     out = []
     for d in docs:
-        out.append({"id": str(d["_id"]), "email": d.get("email"), "full_name": d.get("full_name")})
+        out.append({"id": str(d["_id"]), "email": d.get("email"), "full_name": decrypt_field(d.get("full_name_enc"))})
     return out
 
 @router.get("/{user_id}", response_model=dict)
