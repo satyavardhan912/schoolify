@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/apiClient";
 
@@ -11,6 +11,34 @@ export default function PrincipalDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lastCreated, setLastCreated] = useState(null);
+
+  async function loadTeachers() {
+    setTeachersError("");
+    setTeachersLoading(true);
+    try {
+      const list = await apiFetch("/users/teachers", {
+        method: "GET",
+        token,
+      });
+      setTeachers(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err?.body?.detail ||
+        (Array.isArray(err?.body) && err.body[0]?.msg) ||
+        `Failed to load teachers (status ${err.status || "unknown"})`;
+      setTeachersError(msg);
+    } finally {
+      setTeachersLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (token) {
+      loadTeachers();
+    }
+  }, [token]);
+
 
   async function handleCreateTeacher(e) {
     e.preventDefault();
@@ -41,6 +69,29 @@ export default function PrincipalDashboard() {
       setError(msg);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeleteTeacher(id) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this teacher?"
+    );
+    if (!confirmed) return;
+
+    try {
+      await apiFetch(`/auth/principal/teachers/${id}`, {
+        method: "DELETE",
+        token,
+      });
+      // optimistic update
+      setTeachers((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err?.body?.detail ||
+        (Array.isArray(err?.body) && err.body[0]?.msg) ||
+        `Failed to delete teacher (status ${err.status || "unknown"})`;
+      alert(msg);
     }
   }
 
@@ -96,6 +147,45 @@ export default function PrincipalDashboard() {
           <pre>{JSON.stringify(lastCreated, null, 2)}</pre>
         </div>
       )}
+       <div className="teacher-list">
+        <h3>Existing teachers</h3>
+
+        {teachersLoading && <p>Loading teachers...</p>}
+        {teachersError && <div className="error">{teachersError}</div>}
+
+        {!teachersLoading && teachers.length === 0 && !teachersError && (
+          <p className="hint">No teachers found yet.</p>
+        )}
+
+        {teachers.length > 0 && (
+          <table className="teacher-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Full name</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {teachers.map((t) => (
+                <tr key={t.id}>
+                  <td>{t.email}</td>
+                  <td>{t.full_name || "-"}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() => handleDeleteTeacher(t.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </section>
   );
 }
