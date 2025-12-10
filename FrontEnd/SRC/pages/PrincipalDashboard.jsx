@@ -12,6 +12,11 @@ export default function PrincipalDashboard() {
   const [error, setError] = useState("");
   const [lastCreated, setLastCreated] = useState(null);
 
+  const [teachers, setTeachers] = useState([]);
+  const [teachersLoading, setTeachersLoading] = useState(false);
+  const [teachersError, setTeachersError] = useState("");
+
+
   async function loadTeachers() {
     setTeachersError("");
     setTeachersLoading(true);
