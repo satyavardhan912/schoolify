@@ -99,16 +99,17 @@ export default function TeacherDashboard() {
     }
     setExamLoading(true);
     try {
-      // Body shape should match your ExamCreate schema
       const body = {
-        term: term || null,
-        maths: Number(marks.maths || 0),
-        physics: Number(marks.physics || 0),
-        chemistry: Number(marks.chemistry || 0),
-        biology: Number(marks.biology || 0),
-        social: Number(marks.social || 0),
-        english: Number(marks.english || 0),
-      };
+          term: term || null,
+          scores: {
+            maths: Number(marks.maths || 0),
+            physics: Number(marks.physics || 0),
+            chemistry: Number(marks.chemistry || 0),
+            biology: Number(marks.biology || 0),
+            social: Number(marks.social || 0),
+            english: Number(marks.english || 0),
+          },
+        };
       const res = await apiFetch(
         `/exams/teachers/${teacherId}/students/${selectedStudentId}`,
         {
