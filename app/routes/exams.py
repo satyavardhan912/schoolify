@@ -65,24 +65,47 @@ def upload_exam(
         "scores": doc["scores"],
     }
 
-# List exams for a student
 @router.get("/students/{student_id}", response_model=List[schemas.ExamOut])
-def list_student_exams(student_id: str = Path(...), current_user: dict = Depends(get_current_user)):
+def list_student_exams(
+    student_id: str = Path(...),
+    current_user: dict = Depends(get_current_user),
+):
+    # Verify student exists and enforce RBAC
     try:
-        docs = EXAMS.find({"student_id": student_id})
+        student = STUDENTS.find_one({"_id": ObjectId(student_id)})
     except Exception:
-        raise HTTPException(status_code=404, detail="Student not found or no exams")
-    out = []
+        student = None
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    role = current_user.get("role")
+    uid = current_user.get("id")
+
+    if role == "parent" and student.get("parent_id") != uid:
+        raise HTTPException(
+            status_code=403, detail="Parents can only view exams of their own child"
+        )
+    if role == "teacher" and student.get("teacher_id") != uid:
+        raise HTTPException(
+            status_code=403, detail="Teachers can only view exams of their own students"
+        )
+    # principal etc. can view all
+
+    docs = EXAMS.find({"student_id": student_id})
+    result = []
     for d in docs:
-        out.append({
-            "id": str(d["_id"]),
-            "student_id": d["student_id"],
-            "teacher_id": d["teacher_id"],
-            "term": d.get("term"),
-            "date": d.get("date"),
-            "scores": d.get("scores", {}),
-        })
-    return out
+        result.append(
+            {
+                "id": str(d["_id"]),
+                "student_id": d.get("student_id"),
+                "teacher_id": d.get("teacher_id"),
+                "term": d.get("term"),
+                "scores": d.get("scores"),
+                "created_at": d.get("created_at"),
+            }
+        )
+    return result
 
 # Compare two students for a term (if term omitted, compare latest exams)
 @router.get("/compare", response_model=schemas.ComparisonOut)

@@ -153,3 +153,32 @@ def principal_delete_teacher(
     USERS.delete_one({"_id": oid})
     # we just return 204 No Content
     return
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    body: schemas.ChangePasswordIn,
+    current_user: dict = Depends(get_current_user),
+):
+    user = USERS.find_one({"_id": ObjectId(current_user["id"])})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    stored_hash = user.get("password_hash") or user.get("password")
+    if stored_hash is None:
+        raise HTTPException(status_code=400, detail="Password not set")
+
+    # verify current password (supports legacy)
+    if isinstance(stored_hash, str) and stored_hash.startswith("$2"):
+        ok = verify_password(body.current_password, stored_hash)
+    else:
+        ok = (body.current_password == stored_hash)
+
+    if not ok:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    new_hash = hash_password(body.new_password)
+    USERS.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password_hash": new_hash}, "$unset": {"password": ""}},
+    )
+    return
