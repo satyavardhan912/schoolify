@@ -4,9 +4,11 @@ import PrincipalDashboard from "./pages/PrincipalDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import ParentDashboard from "./pages/ParentDashboard";
 import ChangePasswordForm from "./components/ChangePasswordForm";
+import {useState} from "react";
 
 function App() {
   const { isAuthenticated, user, logout, initializing } = useAuth();
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
   if (initializing) {
     return (
