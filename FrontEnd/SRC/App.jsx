@@ -2,6 +2,8 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import PrincipalDashboard from "./pages/PrincipalDashboard";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import ParentDashboard from "./pages/ParentDashboard";
+import ChangePasswordForm from "./components/ChangePasswordForm";
 
 function App() {
   const { isAuthenticated, user, logout, initializing } = useAuth();
@@ -32,10 +34,26 @@ function App() {
             Logged in as <strong>{role}</strong>
           </p>
         </div>
-        <button className="logout-btn" onClick={logout}>
-          Logout
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            className="logout-btn"
+            type="button"
+            onClick={() => setShowChangePassword((v) => !v)}
+          >
+            {showChangePassword ? "Close password panel" : "Change password"}
+          </button>
+          <button className="logout-btn" type="button" onClick={logout}>
+            Logout
+          </button>
+        </div>
       </header>
+
+      {showChangePassword && (
+        <section className="card">
+          <h2>Change password</h2>
+          <ChangePasswordForm />
+        </section>
+      )}
 
       <main>
         <section className="card">
@@ -56,13 +74,14 @@ function App() {
 
         {role === "teacher" && <TeacherDashboard />}
 
-        {!isPrincipal && !isTeacher && (
+        {role === "parent" && <ParentDashboard />}
+
+        {role !== "principal" && role !== "teacher" && role !== "parent" && (
           <section className="card">
-            <h2>Limited view</h2>
+            <h2>Limited access</h2>
             <p>
-              You are logged in but do not have principal or teacher
-              permissions. Principal-only actions are hidden and will return
-              HTTP 403 from the backend if attempted.
+              Your role (<code>{role}</code>) has limited UI features. You can
+              still use APIs directly via curl/Postman.
             </p>
           </section>
         )}
