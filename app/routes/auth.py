@@ -20,6 +20,8 @@ def register(u: schemas.UserCreate):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = hash_password(u.password)
     full_name_enc = encrypt_field(u.full_name) if u.full_name else None
+    print(full_name_enc)
+    print(encrypt_field(u.full_name))
     doc = {
         "email": u.email,
         "password": hashed,

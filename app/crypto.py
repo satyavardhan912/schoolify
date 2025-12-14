@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import os
 import logging
 
@@ -8,7 +10,9 @@ except Exception:
     InvalidToken = Exception
 
 logger = logging.getLogger("app.crypto")
-_key = os.getenv("FIELD_ENCRYPTION_KEY", "schoolify-masterkey").strip() or None
+password = "satyavardhan"
+hashed_key_digest = hashlib.sha256(password.encode('utf-8')).digest()
+_key = base64.urlsafe_b64encode(hashed_key_digest)
 _fernet = None
 
 if _key and Fernet is not None:
